@@ -11,11 +11,17 @@
     <title>ყავა თათიასთან</title>
   </head>
   <body>
-    <form name="coffee-date" data-netlify="true" hidden>
+    <form
+      name="coffee-date"
+      method="POST"
+      data-netlify="true"
+      netlify
+      style="display: none"
+    >
       <input type="hidden" name="form-name" value="coffee-date" />
-      <input name="date" />
-      <input name="time" />
-      <input name="message" />
+      <input type="text" name="date" />
+      <input type="text" name="time" />
+      <input type="text" name="message" />
     </form>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
