@@ -14,7 +14,7 @@ const fullDate = new Intl.DateTimeFormat('ka-GE', {
 });
 
 const coffeeGif =
-  'https://media.tenor.com/YZPnGuPeZv8AAAAC/cat-coffee.gif';
+  'https://media.tenor.com/2roX3uxz_68AAAAC/cat-space.gif';
 
 function encodeForm(data) {
   return new URLSearchParams(data).toString();
@@ -35,28 +35,60 @@ function getNextSevenDays() {
   });
 }
 
-function getTimeSlots() {
+function formatSlot(totalHour, minute) {
+  return `${String(totalHour % 24).padStart(2, '0')}:${String(minute).padStart(
+    2,
+    '0',
+  )}`;
+}
+
+function buildTimeSlots(startHour, endHour, shouldSkip = () => false) {
   const slots = [];
 
-  for (let hour = 20; hour <= 25; hour += 1) {
-    const normalizedHour = hour % 24;
+  for (let hour = startHour; hour <= endHour; hour += 1) {
     for (const minute of [0, 30]) {
-      if (hour === 25 && minute === 30) continue;
-      slots.push(
-        `${String(normalizedHour).padStart(2, '0')}:${String(minute).padStart(
-          2,
-          '0',
-        )}`,
-      );
+      if (hour === endHour && minute === 30) continue;
+      if (!shouldSkip(hour, minute)) slots.push(formatSlot(hour, minute));
     }
   }
 
   return slots;
 }
 
+function getTimeSlots(selectedDateId, dates) {
+  const selectedDate = dates.find((date) => date.id === selectedDateId)?.date;
+  const day = selectedDate?.getDay();
+
+  if (day === 6) {
+    return buildTimeSlots(9, 25);
+  }
+
+  if (day === 0) {
+    return buildTimeSlots(9, 25, (hour, minute) => {
+      return hour >= 12 && (hour < 15 || (hour === 15 && minute === 0));
+    });
+  }
+
+  return buildTimeSlots(20, 25);
+}
+
+function getAvailabilityText(selectedDateId, dates) {
+  const selectedDate = dates.find((date) => date.id === selectedDateId)?.date;
+  const day = selectedDate?.getDay();
+
+  if (day === 6) {
+    return 'შაბათს მთელი დღე თავისუფალია.';
+  }
+
+  if (day === 0) {
+    return 'კვირას 12:00-დან 15:00-ის ჩათვლით არა, დანარჩენი დრო თავისუფალია.';
+  }
+
+  return 'ამ დღეს თავისუფალი ფანჯარაა 20:00-დან ღამის 01:00-მდე.';
+}
+
 export default function App() {
   const dates = useMemo(getNextSevenDays, []);
-  const timeSlots = useMemo(getTimeSlots, []);
   const [step, setStep] = useState('intro');
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState('');
@@ -65,6 +97,7 @@ export default function App() {
   const [showUnavailableMessage, setShowUnavailableMessage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
+  const timeSlots = useMemo(() => getTimeSlots(selectedDate, dates), [dates, selectedDate]);
 
   const moveRunawayButton = (event) => {
     event?.preventDefault();
@@ -152,7 +185,7 @@ export default function App() {
           </div>
         </div>
 
-        <p className="eyebrow">ერთი ძალიან მნიშვნელოვანი კითხვა</p>
+        <p className="eyebrow">მიდი, დასვი დიაგნოზი.</p>
         <h1>როდის წავიდეთ ყავის დასალევად თათია?</h1>
         <p className="subtitle">როდის მთავრდება შენი მორიგეობები?</p>
 
@@ -186,8 +219,8 @@ export default function App() {
         {step === 'date' && (
           <div className="panel pop-in">
             <img className="celebration-gif" src={coffeeGif} alt="სიხარულის გიფი" />
-            <h2>ეგრე რა შე კაი კაცო</h2>
-            <p>აირჩიე დღე შემდეგი ერთი კვირიდან და მერე საათზეც შევთანხმდეთ.</p>
+            <h2>ეგრე რა...</h2>
+            <p>აირჩიე დღე შემდეგი კვირიდან</p>
 
             <div className="calendar-grid" aria-label="თარიღის არჩევა">
               {dates.map((date) => (
@@ -195,7 +228,10 @@ export default function App() {
                   className={`date-card ${selectedDate === date.id ? 'selected' : ''}`}
                   key={date.id}
                   type="button"
-                  onClick={() => setSelectedDate(date.id)}
+                  onClick={() => {
+                    setSelectedDate(date.id);
+                    setSelectedTime('');
+                  }}
                 >
                   <span>{date.label.split(' ')[0]}</span>
                   <strong>{date.label.replace(date.label.split(' ')[0], '').trim()}</strong>
@@ -209,16 +245,16 @@ export default function App() {
               disabled={!selectedDate}
               onClick={continueToTime}
             >
-              თარიღი არჩეულია
+              დასტურ!
             </button>
           </div>
         )}
 
         {step === 'time' && (
           <div className="panel slide-up">
-            <h2>ძალიან კარგი, ახლა საათი</h2>
+            <h2>ძანაც კაი! ეხლა საათი შეარჩიე შენიჭირიმე.</h2>
             <p>
-              {selectedDateLabel} თავისუფალი ფანჯარაა 20:00-დან ღამის 01:00-მდე.
+              {selectedDateLabel} - {getAvailabilityText(selectedDate, dates)}
             </p>
 
             <div className="time-grid" aria-label="საათის არჩევა">
