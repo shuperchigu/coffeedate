@@ -303,9 +303,9 @@ export default function App() {
             </div>
             <h2>შეთანხმდით</h2>
             <p>
-              მანქანით გამოგივლი {selectedDateLabel}-ს, {selectedTime}-ზე. თვალი ჩავუკარი.
+              მანქანით გამოგივლი {selectedDateLabel}-ს, {selectedTime}-ზე.
             </p>
-            <p className="tiny-note">არჩევანი გაგზავნილია Netlify Form-ში.</p>
+            <p className="tiny-note">მეილზე მომივა დრო და თარიღი.</p>
           </div>
         )}
       </section>
