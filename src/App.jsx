@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const georgianDate = new Intl.DateTimeFormat('ka-GE', {
   weekday: 'short',
@@ -99,27 +99,56 @@ export default function App() {
   const [submissionError, setSubmissionError] = useState('');
   const timeSlots = useMemo(() => getTimeSlots(selectedDate, dates), [dates, selectedDate]);
 
+  const getRunawayPosition = useCallback((preferInitialPosition = false) => {
+    const buttonWidth = 210;
+    const buttonHeight = 58;
+    const safePadding = 22;
+    const bottomReservedSpace = 88;
+    const maxLeft = Math.max(window.innerWidth - buttonWidth - safePadding, safePadding);
+    const maxTop = Math.max(
+      window.innerHeight - buttonHeight - bottomReservedSpace,
+      safePadding,
+    );
+
+    if (preferInitialPosition) {
+      return {
+        position: 'fixed',
+        left: `${Math.min(Math.max(window.innerWidth / 2 + 12, safePadding), maxLeft)}px`,
+        top: `${Math.min(Math.max(window.innerHeight / 2 + 160, safePadding), maxTop)}px`,
+        zIndex: 20,
+        transform: 'rotate(2deg)',
+      };
+    }
+
+    return {
+      position: 'fixed',
+      left: `${safePadding + Math.random() * (maxLeft - safePadding)}px`,
+      top: `${safePadding + Math.random() * (maxTop - safePadding)}px`,
+      zIndex: 20,
+      transform: `rotate(${Math.random() * 18 - 9}deg)`,
+    };
+  }, []);
+
+  useEffect(() => {
+    setRunawayStyle(getRunawayPosition(true));
+
+    const keepButtonInBounds = () => {
+      setRunawayStyle(getRunawayPosition(true));
+    };
+
+    window.addEventListener('resize', keepButtonInBounds);
+    return () => window.removeEventListener('resize', keepButtonInBounds);
+  }, [getRunawayPosition]);
+
   const moveRunawayButton = (event) => {
     event?.preventDefault();
     if (isRunawayHidden) return;
-
-    const buttonWidth = 210;
-    const buttonHeight = 58;
-    const safePadding = 18;
-    const maxLeft = Math.max(window.innerWidth - buttonWidth - safePadding, 0);
-    const maxTop = Math.max(window.innerHeight - buttonHeight - safePadding, 0);
 
     setShowUnavailableMessage(true);
     setIsRunawayHidden(true);
 
     window.setTimeout(() => {
-      setRunawayStyle({
-        position: 'fixed',
-        left: `${safePadding + Math.random() * maxLeft}px`,
-        top: `${safePadding + Math.random() * maxTop}px`,
-        zIndex: 20,
-        transform: `rotate(${Math.random() * 18 - 9}deg)`,
-      });
+      setRunawayStyle(getRunawayPosition());
       setIsRunawayHidden(false);
     }, 180);
   };
@@ -195,24 +224,7 @@ export default function App() {
               <button className="primary-button" type="button" onClick={acceptInvitation}>
                 კაი ხო წავიდეთ
               </button>
-              <button
-                className={`ghost-button runaway-button ${
-                  isRunawayHidden ? 'is-hidden' : ''
-                }`}
-                type="button"
-                style={runawayStyle}
-                onFocus={moveRunawayButton}
-                onPointerDown={moveRunawayButton}
-                onPointerEnter={moveRunawayButton}
-              >
-                ყავას მარტოც დავლევ
-              </button>
             </div>
-            {showUnavailableMessage && (
-              <p className="unavailable-message">
-                ეს ოფშენი არაა ამჟამად ხელმისაწვდომი ექიმოოოოო
-              </p>
-            )}
           </div>
         )}
 
@@ -297,6 +309,26 @@ export default function App() {
           </div>
         )}
       </section>
+
+      {step === 'intro' && (
+        <>
+          <button
+            className={`ghost-button runaway-button ${isRunawayHidden ? 'is-hidden' : ''}`}
+            type="button"
+            style={runawayStyle}
+            onFocus={moveRunawayButton}
+            onPointerDown={moveRunawayButton}
+            onPointerEnter={moveRunawayButton}
+          >
+            ყავას მარტოც დავლევ
+          </button>
+          {showUnavailableMessage && (
+            <p className="unavailable-message">
+              ეს ოფშენი არაა ამჟამად ხელმისაწვდომი ექიმოოოოო
+            </p>
+          )}
+        </>
+      )}
     </main>
   );
 }
